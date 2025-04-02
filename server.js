@@ -1,12 +1,12 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const passport = require('passport');
-const authJwtController = require('./auth_jwt'); // You're not using authController, consider removing it
+const authJwtController = require('./auth_jwt'); 
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const User = require('./Users');
-const Movie = require('./Movies'); // You're not using Movie, consider removing it
-
+const Movie = require('./Movies'); 
+const Review = require('./Reviews'); 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -136,6 +136,108 @@ router.route('/movies/:movieId')
         }
     });
 
+// POST /reviews — matches the test exactly
+router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
+  if (!req.body.movieId || !req.body.review || !req.body.rating) {
+      return res.status(400).json({ success: false, message: 'Please include movieId, review, and rating' });
+  }
+
+  try {
+      const movie = await Movie.findById(req.body.movieId);
+      if (!movie) {
+          return res.status(404).json({ success: false, message: 'Movie not found' });
+      }
+
+      const newReview = new Review({
+          movieId: req.body.movieId,
+          username: req.user.username,
+          review: req.body.review,
+          rating: req.body.rating
+      });
+
+      await newReview.save();
+
+      return res.status(200).json({ message: 'Review created!' }); // Exactly what the test expects
+  } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Failed to create review' });
+  }
+});
+// POST /reviews 
+router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
+  if (!req.body.movieId || !req.body.review || !req.body.rating) {
+      return res.status(400).json({ success: false, message: 'Please include movieId, review, and rating' });
+  }
+
+  try {
+      const movie = await Movie.findById(req.body.movieId);
+      if (!movie) {
+          return res.status(404).json({ success: false, message: 'Movie not found' });
+      }
+
+      const newReview = new Review({
+          movieId: req.body.movieId,
+          username: req.user.username,
+          review: req.body.review,
+          rating: req.body.rating
+      });
+
+      await newReview.save();
+
+      return res.status(200).json({ message: 'Review created!' }); 
+  } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Failed to create review' });
+  }
+});
+// get all reviews
+router.get('/reviews', authJwtController.isAuthenticated, async (req, res) => {
+  try {
+      const reviews = await Review.find().populate('movieId', 'title'); // Optionally include movie title
+      return res.status(200).json({ success: true, reviews });
+  } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
+  }
+});
+// get specific review for a movie
+router.get('/movies/:movieId/reviews/:reviewId', authJwtController.isAuthenticated, async (req, res) => {
+  try {
+      const review = await Review.findOne({
+          _id: req.params.reviewId,
+          movieId: req.params.movieId
+      }).populate('movieId', 'title');
+
+      if (!review) {
+          return res.status(404).json({ success: false, message: 'Review not found for this movie' });
+      }
+
+      return res.status(200).json({ success: true, review });
+  } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: 'Failed to retrieve review' });
+  }
+});
+
+router.route('/movies/:movieId/reviews/:reviewId')
+    .delete(authJwtController.isAuthenticated, async (req, res) => {
+      try {
+        const review = await Review.findOneAndDelete({
+          _id: req.params.reviewId,
+          movieId: req.params.movieId
+        });
+  
+        if (!review) {
+          return res.status(404).json({ success: false, message: 'Review not found' });
+        }
+  
+        return res.json({ success: true, message: 'Review deleted successfully' });
+      } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: 'Failed to delete review' });
+      }
+    });
+  
 app.use('/', router);
 
 const PORT = process.env.PORT || 8080; // Define PORT before using it
