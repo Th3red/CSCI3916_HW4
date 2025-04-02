@@ -93,19 +93,42 @@ router.route('/movies')
     });
 router.route('/movies/:movieId')
     .get(authJwtController.isAuthenticated, async (req, res) => {
-        try {
-            const movie = await Movie.findById(req.params.movieId);
-
-            if (!movie) {
-                return res.status(404).json({ success: false, message: 'Movie not found' });
+      try {
+        if (req.query.reviews === 'true') {
+          const movieWithReviews = await Movie.aggregate([
+            {
+              $match: { _id: new mongoose.Types.ObjectId(req.params.movieId) }
+            },
+            {
+              $lookup: {
+                from: 'reviews',
+                localField: '_id',
+                foreignField: 'movieId',
+                as: 'reviews'
+              }
             }
+          ]);
 
-            return res.json({ success: true, movie });
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ success: false, message: 'Failed to retrieve movie' });
+          if (movieWithReviews.length === 0) {
+            return res.status(404).json({ success: false, message: 'Movie not found' });
+          }
+
+          return res.json({ success: true, movie: movieWithReviews[0] });
+        } else {
+          const movie = await Movie.findById(req.params.movieId);
+
+          if (!movie) {
+            return res.status(404).json({ success: false, message: 'Movie not found' });
+          }
+
+          return res.json({ success: true, movie });
         }
+      } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: 'Failed to retrieve movie' });
+      }
     })
+
     .put(authJwtController.isAuthenticated, async (req, res) => {
         try {
             const updatedMovie = await Movie.findByIdAndUpdate(
@@ -136,34 +159,7 @@ router.route('/movies/:movieId')
         }
     });
 
-// POST /reviews — matches the test exactly
-router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
-  if (!req.body.movieId || !req.body.review || !req.body.rating) {
-      return res.status(400).json({ success: false, message: 'Please include movieId, review, and rating' });
-  }
-
-  try {
-      const movie = await Movie.findById(req.body.movieId);
-      if (!movie) {
-          return res.status(404).json({ success: false, message: 'Movie not found' });
-      }
-
-      const newReview = new Review({
-          movieId: req.body.movieId,
-          username: req.user.username,
-          review: req.body.review,
-          rating: req.body.rating
-      });
-
-      await newReview.save();
-
-      return res.status(200).json({ message: 'Review created!' }); // Exactly what the test expects
-  } catch (err) {
-      console.error(err);
-      return res.status(500).json({ success: false, message: 'Failed to create review' });
-  }
-});
-// POST /reviews 
+// POST /reviews
 router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
   if (!req.body.movieId || !req.body.review || !req.body.rating) {
       return res.status(400).json({ success: false, message: 'Please include movieId, review, and rating' });
@@ -218,7 +214,7 @@ router.get('/movies/:movieId/reviews/:reviewId', authJwtController.isAuthenticat
       return res.status(500).json({ success: false, message: 'Failed to retrieve review' });
   }
 });
-
+// optional delete review
 router.route('/movies/:movieId/reviews/:reviewId')
     .delete(authJwtController.isAuthenticated, async (req, res) => {
       try {

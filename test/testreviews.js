@@ -26,34 +26,29 @@ let token = ''
 let movieId = null
 
 describe('Test Review Routes', () => {
-   before((done) => { //Before  test initialize the database to empty
-        User.deleteOne({ name: 'test2'}, function(err, user) {
-            if (err) throw err;
-        });
-       
-        Movie.deleteOne({ title: 'Alice in Wonderland'}, function(err, movie) {
-            if (err) throw err;
-        });
+    before(async () => {
+        try {
+          await User.deleteOne({ name: 'test2' });
+          await Movie.deleteOne({ title: 'Alice in Wonderland' });
+          await Review.deleteOne({ review: review_details.review });
+        } catch (err) {
+          console.error(err);
+          throw err;
+        }
+      });
+      
 
-        Review.deleteOne({ review: review_details.review }, function(err, review) {
-            if (err) throw err;
-        });
-       done();
-    })
-
-    after((done) => { //after this test suite empty the database
-        User.deleteOne({ name: 'test2'}, function(err, user) {
-            if (err) throw err;
-        });
-       
-        Movie.deleteOne({ title: 'Alice in Wonderland'}, function(err, user) {
-            if (err) throw err;
-        });
-        Review.deleteOne({ review: review_details.review }, function(err, review) {
-            if (err) throw err;
-        });
-        done();
-    })
+      after(async () => {
+        try {
+          await User.deleteOne({ name: 'test2' });
+          await Movie.deleteOne({ title: 'Alice in Wonderland' });
+          await Review.deleteOne({ review: review_details.review });
+        } catch (err) {
+          console.error(err);
+          throw err;
+        }
+      });
+      
 
     describe('/signup', () => {
         it('it should register, login and check our token', (done) => {
@@ -61,7 +56,7 @@ describe('Test Review Routes', () => {
               .post('/signup')
               .send(login_details)
               .end((err, res) =>{
-                res.should.have.status(200);
+                res.should.have.status(201);
                 res.body.success.should.be.eql(true);
                 //follow-up to get the JWT token
                 chai.request(server)
