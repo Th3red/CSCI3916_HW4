@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const passport = require('passport');
@@ -194,6 +196,14 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
       return res.status(500).json({ success: false, message: 'Failed to create review' });
   }
 });
+
+router.get('/test', (req, res) => {
+  trackEventGA4('Test Movie', 'Test Genre', '/test')
+    .then(() => res.send('Tracked!'))
+    .catch(err => res.status(500).send('Failed'));
+});
+
+
 // get all reviews
 router.get('/reviews', authJwtController.isAuthenticated, async (req, res) => {
   try {
