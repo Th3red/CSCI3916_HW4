@@ -7,7 +7,7 @@ const cors = require('cors');
 const User = require('./Users');
 const Movie = require('./Movies'); 
 const Review = require('./Reviews'); 
-const trackDimension = require('./analytics_EC');
+const trackEventGA4 = require('./analytics_EC');
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -181,14 +181,12 @@ router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
 
       await newReview.save();
       // Extra Credit: Track the review creation event with Google Analytics
-      trackDimension(
+      trackEventGA4(
+        movie.title || 'Unknown Movie',
         movie.genre || 'Unknown Genre',
-        'POST /reviews',
-        'API Request for Movie Review',
-        '1',
-        movie.title || 'Unknown Movie',           
-        '1'
-      ).catch(err => console.error('GA track error:', err.message));
+        'POST /reviews'
+      ).catch(err => console.error('GA4 track error:', err.message));
+      
 
       return res.status(200).json({ message: 'Review created!' }); 
   } catch (err) {

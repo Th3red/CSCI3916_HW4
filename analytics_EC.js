@@ -1,44 +1,27 @@
+const axios = require('axios');
+const crypto = require('crypto');
 
-const crypto = require("crypto");
-var rp = require('request-promise');
+const measurementId = process.env.GA_MEASUREMENT_ID;
+const apiSecret = process.env.GA_API_SECRET;
 
+function trackEventGA4(movieTitle, genre, path) {
+  const clientId = crypto.randomBytes(16).toString('hex');
 
-
-const GA_TRACKING_ID = process.env.GA_KEY;
-
-function trackDimension(category, action, label, value, dimension, metric) {
-
-    var options = { method: 'GET',
-        url: 'https://www.google-analytics.com/collect',
-        qs:
-            {   // API Version.
-                v: '1',
-                // Tracking ID / Property ID.
-                tid: GA_TRACKING_ID,
-                // Random Client Identifier. Ideally, this should be a UUID that
-                // is associated with particular user, device, or browser instance.
-                cid: crypto.randomBytes(16).toString("hex"),
-                // Event hit type.
-                t: 'event',
-                // Event category.
-                ec: category,
-                // Event action.
-                ea: action,
-                // Event label.
-                el: label,
-                // Event value.
-                ev: value,
-                // Custom Dimension
-                cd1: dimension,
-                // Custom Metric
-                cm1: metric
-            },
-        headers:
-            {  'Cache-Control': 'no-cache' } };
-
-    return rp(options);
+  return axios.post(`https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
+    client_id: clientId,
+    events: [
+      {
+        name: "movie_review",
+        params: {
+          movie_title: movieTitle,
+          genre: genre,
+          event_path: path,
+          value: 1
+        }
+      }
+    ]
+  });
 }
 
 
-module.exports = trackDimension;
-
+module.exports = trackEventGA4;
