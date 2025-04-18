@@ -73,10 +73,35 @@ router.post('/signin', async (req, res) => { // Use async/await
 
 router.route('/movies')
   .get(authJwtController.isAuthenticated, async (req, res) => {
+    // Update movie endpoint to sort results by average rating if reviews=true
       try {
+        if (req.query.reviews === 'true') {
+          const moviesWithReviews = await Movie.aggregate([
+            {
+              $lookup: {
+                from: 'reviews',
+                localField: '_id',
+                foreignField: 'movieId',
+                as: 'reviews'
+              }
+            },
+            {
+              $addFields: {
+                avgRating: { $avg: '$reviews.rating' }
+              }
+            },
+            {
+              $sort: { avgRating: -1 }
+            }
+          ]);
+          return res.json(moviesWithReviews);
+        
+      } else {
         const movies = await Movie.find();
         return res.json(movies);
-      } catch (err) {
+      }
+
+    }catch (err) {
         console.error(err);
         return res.status(500).json({ success: false, message: 'Failed to get movie' });
       }
@@ -162,7 +187,38 @@ router.route('/movies')
             return res.status(500).json({ success: false, message: 'Failed to delete movie' });
         }
     });
-
+// Movie details for mo
+router.get('/movies/:movieId/details', authJwtController.isAuthenticated, async (req, res) => {
+  try {
+    const movieId = req.params.movieId;
+    if (!movieId) {
+      return res.status(400).json({ success: false, message: 'Please provide a movieId' });
+    }
+    const aggregate = await Movie.aggregate([
+      { $match: { _id: mongoose.Types.ObjectId(movieId) } },
+      {
+        $lookup: {
+          from: 'reviews',
+          localField: '_id',
+          foreignField: 'movieId',
+          as: 'reviews'
+        }
+      },
+      {
+        $addFields: {
+          avgRating: { $avg: '$reviews.rating' }
+        }
+      }
+    ]);
+    if (aggregate.length === 0) {
+      return res.status(404).json({ success: false, message: 'Movie not found' });
+    }
+    return res.status(200).json({ success: true, movie: aggregate[0] });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: 'Failed to get movie details' });
+  }
+});
 // POST /reviews
 router.post('/reviews', authJwtController.isAuthenticated, async (req, res) => {
   if (!req.body.movieId || !req.body.review || !req.body.rating) {
