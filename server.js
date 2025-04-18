@@ -135,6 +135,22 @@ router.route('/movies')
                 foreignField: 'movieId',
                 as: 'reviews'
               }
+            },
+            {
+              $addFields: {
+                avgRating: { $avg: '$reviews.rating' }
+              }
+            },
+            {
+              $project: {
+                title: 1,
+                releaseDate: 1,
+                genre: 1,
+                actors: 1,
+                imageUrl: 1,
+                reviews: 1,
+                avgRating: { $ifNull: ['$avgRating', 0] } // Default to 0 if no reviews
+              }
             }
           ]);
 
@@ -213,7 +229,7 @@ router.get('/movies/:movieId/details', authJwtController.isAuthenticated, async 
     if (aggregate.length === 0) {
       return res.status(404).json({ success: false, message: 'Movie not found' });
     }
-    return res.status(200).json({ success: true, movie: aggregate[0] });
+    return res.status(200).json(aggregate[0]);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ success: false, message: 'Failed to get movie details' });
