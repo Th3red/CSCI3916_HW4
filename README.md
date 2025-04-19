@@ -1,6 +1,8 @@
 ## Explanation of Project
-HW4 Project builds upon the previous API and focuses on creating a review collection. Each review document references a movieId.
-To post a review the user needs to be authenticated with a JWT authorization token. The reviews=true query provided, utilizes Mongodb $lookup operator to join reviews with movie data.
+HW4/HW5 Project builds upon the previous API and focuses on creating a review collection. Each review document references a movieId. And allows users to retrieve details from Movies. 
+Users can now post and view comments and user ratings for each Movie. Images of a movie are available by adding a new attribute to store the URL of a movie’s image in schema. 
+Every endpoint is secured with JWT. To post a review the user needs to be authenticated with a JWT authorization token.
+The reviews=true query provided, utilizes Mongodb $lookup operator to join reviews with movie data.
 ## Installation and usage
 REACT_WEBSITE = https://csci3916react-hw5.onrender.com
 
