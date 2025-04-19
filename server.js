@@ -141,17 +141,6 @@ router.route('/movies')
                 avgRating: { $avg: '$reviews.rating' }
               }
             }
-          /*  {
-              $project: {
-                title: 1,
-                releaseDate: 1,
-                genre: 1,
-                actors: 1,
-                imageUrl: 1,
-                reviews: 1,
-                avgRating: { $ifNull: ['$avgRating', 0] } // Default to 0 if no reviews
-              }
-            }*/
           ]);
 
           if (movieWithReviews.length === 0) {
